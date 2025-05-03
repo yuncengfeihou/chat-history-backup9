@@ -37,7 +37,7 @@ import {
 } from '../../../group-chats.js';
 
 // 扩展名和设置初始化
-const PLUGIN_NAME = 'chat-history-backup9';
+const PLUGIN_NAME = 'chat-history-backup6';
 const DEFAULT_SETTINGS = {
     maxTotalBackups: 3,        // 整个系统保留的最大备份数量
     backupDebounceDelay: 1000, // 防抖延迟时间 (毫秒)
@@ -1118,45 +1118,32 @@ jQuery(async () => {
                     const chat = backup.chat;
                     const lastMessages = chat.slice(-2);
                     
-                    // 创建预览对话框
-                    const previewDialog = $(`
-                        <div class="backup_preview_dialog">
-                            <div class="backup_preview_header">
-                                <span class="backup_preview_title">${backup.entityName} - ${backup.chatName} 预览</span>
-                                <span class="backup_preview_close">&times;</span>
-                            </div>
-                            <div class="backup_preview_content">
-                                ${lastMessages.map(msg => `
-                                    <div class="backup_preview_message">
-                                        <div class="backup_preview_sender">${msg.name || '未知'}:</div>
-                                        <div class="backup_preview_text">${msg.mes || '(空消息)'}</div>
-                                    </div>
-                                `).join('')}
-                            </div>
-                            <div class="backup_preview_footer">
-                                <small>显示最后 ${lastMessages.length} 条消息，共 ${chat.length} 条</small>
-                            </div>
+                    // 创建预览内容
+                    const previewContent = document.createElement('div');
+                    previewContent.innerHTML = `
+                        <h3>${backup.entityName} - ${backup.chatName} 预览</h3>
+                        <div class="backup_preview_content">
+                            ${lastMessages.map(msg => `
+                                <div class="backup_preview_message">
+                                    <div class="backup_preview_sender">${msg.name || '未知'}:</div>
+                                    <div class="backup_preview_text">${msg.mes || '(空消息)'}</div>
+                                </div>
+                            `).join('')}
                         </div>
-                    `);
+                        <div class="backup_preview_footer">
+                            <small>显示最后 ${lastMessages.length} 条消息，共 ${chat.length} 条</small>
+                        </div>
+                    `;
                     
-                    // 添加关闭功能
-                    previewDialog.find('.backup_preview_close').on('click', function() {
-                        previewDialog.fadeOut(200, function() {
-                            $(this).remove();
-                        });
+                    // 导入对话框系统
+                    const { callGenericPopup, POPUP_TYPE } = await import('../../../popup.js');
+                    
+                    // 使用系统弹窗显示预览内容
+                    await callGenericPopup(previewContent, POPUP_TYPE.DISPLAY, '', {
+                        wide: true,
+                        allowVerticalScrolling: true,
+                        okButton: '关闭'
                     });
-                    
-                    // 点击对话框外部关闭
-                    $(document).on('click', function(e) {
-                        if ($(e.target).closest('.backup_preview_dialog').length === 0 && $('.backup_preview_dialog').is(':visible')) {
-                            $('.backup_preview_dialog').fadeOut(200, function() {
-                                $(this).remove();
-                            });
-                        }
-                    });
-                    
-                    // 添加到页面并显示
-                    $('body').append(previewDialog);
                     
                 } else {
                     console.error('[聊天自动备份] 找不到指定的备份或备份为空:', { timestamp, chatKey });
